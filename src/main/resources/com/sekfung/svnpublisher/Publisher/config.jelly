@@ -1,0 +1,52 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry title="SVN URL:" field="svnUrl">
+        <f:textbox  />
+    </f:entry>
+    <f:entry title="${%Credentials}" field="credentialsId">
+        <f:select/>
+    </f:entry>
+    <f:entry title="Commit message:" field="commitMessage">
+        <f:textbox  />
+    </f:entry>
+   <f:entry name="strategy" title="Publish Strategy" field="strategy" help="/plugin/jenkins-svnpublisher/help-strategy.html">
+       <select name="strategy">
+           <option value="always">Always</option>
+           <option value="never">Never</option>
+            <option value="trigger">Trigger</option>
+       </select>
+   </f:entry>
+    <f:entry help="/plugin/jenkins-svnpublisher/help-items.html">
+        <f:repeatable  field="artifacts" minimum="1">            
+            <table>
+                <tr>                    
+                    <td>
+                        <f:entry title="Local Path" field="localPath">
+                            <f:textbox />
+                        </f:entry>
+                    </td>
+                    <td>
+                        <f:entry title="File Pattern" field="pattern">
+                            <f:textbox />
+                        </f:entry>
+                    </td>
+                    <td>
+                        <f:entry title="SVN Path" field="path">
+                            <f:textbox />
+                        </f:entry>
+                    </td>   
+                    <td>
+                        <f:entry title="Parameter Trigger" field="params">
+                            <f:textbox />
+                        </f:entry>
+                    </td>
+                </tr>
+            </table>
+            
+             <div align="right">
+                    <f:repeatableDeleteButton/>
+            </div>
+        </f:repeatable>
+    </f:entry>
+
+</j:jelly>
