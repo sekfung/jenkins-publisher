@@ -3,6 +3,9 @@ package com.sekfung.svnpublisher;
 import hudson.EnvVars;
 import hudson.FilePath;
 import org.springframework.util.StringUtils;
+import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.wc.SVNClientManager;
+import org.tmatesoft.svn.core.wc.SVNStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,10 +27,24 @@ import java.util.stream.Collectors;
  */
 public class Utils {
     private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
+    private static final Pattern ENV_REGEX = Pattern.compile("\\$\\{.+}");
+
+    public static EnvVars appendSvnEnv(EnvVars vars, File workingCopy)  {
+        try {
+            SVNStatus status = SVNClientManager.newInstance().getStatusClient().doStatus(workingCopy, false);
+            vars.put("SVN_REVISION", String.valueOf(status.getRevision().getNumber()));
+            vars.put("SVN_URL", status.getRepositoryRootURL().toDecodedString());
+        } catch (SVNException e) {
+            e.printStackTrace();
+        }
+        return vars;
+    }
+
+
 
     public static String replaceVars(EnvVars vars, String original) {
         String replaced = original;
-        if (Pattern.matches("\\$\\{.+}", original)) {
+        if (ENV_REGEX.matcher(original).matches()) {
             for (Map.Entry<String, String> k : vars.entrySet()) {
                 Pattern p = Pattern.compile("\\$\\{" + k.getKey() + "}");
                 Matcher m = p.matcher(replaced);

@@ -61,7 +61,7 @@ public class Worker implements Serializable {
     }
 
     public void setEnvVars(EnvVars envVars) {
-        this.envVars = envVars;
+        this.envVars = Utils.appendSvnEnv(envVars, new File(workspace.getRemote()));;
     }
 
     public void setSvnUrl(String svnUrl) {
