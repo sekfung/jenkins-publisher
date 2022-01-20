@@ -3,6 +3,7 @@ package com.sekfung.svnpublisher;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.Serializable;
@@ -161,6 +162,7 @@ public class ImportItem extends AbstractDescribableImpl<ImportItem> implements S
     }
 
     @Extension
+    @Symbol({"publisher_artifacts"})
     public static class DescriptorImpl extends Descriptor<ImportItem> {
         @Override
         public String getDisplayName() { return "Artifacts"; }
