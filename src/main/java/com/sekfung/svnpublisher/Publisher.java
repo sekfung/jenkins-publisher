@@ -12,10 +12,7 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractProject;
-import hudson.model.Item;
-import hudson.model.Run;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
@@ -32,6 +29,7 @@ import org.tmatesoft.svn.core.SVNException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author sekfung
@@ -141,9 +139,9 @@ public class Publisher extends Recorder implements SimpleBuildStep {
          */
         public ListBoxModel doFillStrategyItems() {
             ListBoxModel items = new ListBoxModel();
-            items.add("Always", Constants.ALWAYS_COMMIT);
-            items.add("Never", Constants.NEVER_COMMIT);
-            items.add("Trigger", Constants.TRIGGER_COMMIT);
+            items.add("Always", Strategy.ALWAYS_COMMIT);
+            items.add("Never", Strategy.NEVER_COMMIT);
+            items.add("Trigger", Strategy.TRIGGER_COMMIT);
             return items;
         }
 
@@ -187,10 +185,15 @@ public class Publisher extends Recorder implements SimpleBuildStep {
         if (!workspace.exists()) {
             throw new IOException("workspace: " + workspace.getName() + "not exist");
         }
+        if (!Result.SUCCESS.toString().equals(Objects.requireNonNull(run.getResult().toString()))) {
+            listener.getLogger().println("the build result was not successful, abort operation");
+            run.setResult(Result.FAILURE);
+            return;
+        }
         StandardUsernamePasswordCredentials credential = getCredentialById(run, credentialsId);
         Worker worker = new Worker(credential, workspace, svnUrl);
         worker.setListener(listener);
-        if (Constants.NEVER_COMMIT.equalsIgnoreCase(strategy)) {
+        if (Strategy.NEVER_COMMIT.equalsIgnoreCase(strategy)) {
             listener.getLogger().println("because of the strategy, no files would be commit");
             worker.dispose();
             return;
@@ -199,15 +202,12 @@ public class Publisher extends Recorder implements SimpleBuildStep {
         // prepare artifacts to upload repo
         try {
             worker.prepareArtifacts(env, artifacts);
-        } catch (SVNPublisherException | SVNException e) {
-            worker.dispose();
-            throw new InterruptedException("prepare artifacts failed: " + e.getMessage());
-        }
-        try {
             worker.commit(commitMessage);
         } catch (Throwable e) {
             worker.dispose();
-            throw new InterruptedException("commit file failed: " + e.getMessage());
+            run.setResult(Result.FAILURE);
+            listener.getLogger().println("commit file failed: " + e.getMessage());
+//            throw new InterruptedException("prepare artifacts failed: " + e.getMessage());
         }
     }
 

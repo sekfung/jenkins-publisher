@@ -37,7 +37,7 @@ public class Worker implements Serializable {
     /**
      * Upload artifacts strategy, default always
      */
-    private String strategy = Constants.ALWAYS_COMMIT;
+    private String strategy = Strategy.ALWAYS_COMMIT;
     private String commitMsg;
     private StandardUsernamePasswordCredentials credential;
     private FilePath workspace;

@@ -36,10 +36,10 @@ public class CopyFileTask implements FilePath.FileCallable<Void> {
         worker.getListener().getLogger().println("[COPY FILE TASK] executing copy file task....");
         String[] params = item.getParams().split(",");
         //  empty params means it will be always commit
-        if (Constants.ALWAYS_COMMIT.equalsIgnoreCase(worker.getStrategy())) {
+        if (Strategy.ALWAYS_COMMIT.equalsIgnoreCase(worker.getStrategy())) {
             params = new String[]{""};
         }
-        if (Constants.NEVER_COMMIT.equalsIgnoreCase(worker.getStrategy())) {
+        if (Strategy.NEVER_COMMIT.equalsIgnoreCase(worker.getStrategy())) {
             return null;
         }
         try {
@@ -47,11 +47,18 @@ public class CopyFileTask implements FilePath.FileCallable<Void> {
             FilePath searchFilePath = new FilePath(worker.getProjectSpace(), item.getLocalPath());
             List<File> filesToCopy = Utils.findFilesWithPattern(searchFilePath, item.getPattern(), params, this.envVars);
             worker.getListener().getLogger().printf("[COPY FILE TASK] search dir: %s, pattern: %s\n", searchFilePath.getRemote(), item.getPattern());
+            if (filesToCopy.size() == 0) {
+                throw new InterruptedException("no files to commit in the dir:" + searchFilePath.getRemote() + ", please check your pattern configuration: " + item.getPattern());
+            }
             worker.getListener().getLogger().printf("[COPY FILE TASK] waiting for copying file total: %s\n", filesToCopy.size() + "");
             for (File f : filesToCopy) {
                 File workingCopyDir = Paths.get(worker.getWorkspace().getRemote(), item.getPath()).toFile();
                 File localFile = Paths.get(worker.getProjectSpace().getRemote(), item.getLocalPath(), f.getName()).toFile();
                 File workingCopyFile = new File(workingCopyDir, f.getName());
+                if ("false".equalsIgnoreCase(this.item.getParams()) && worker.getStrategy().equalsIgnoreCase("always")) {
+                    worker.getListener().getLogger().printf("skip copy file: %s when strategy is always and param trigger is false", localFile.getAbsolutePath());
+                    continue;
+                }
                 FileUtils.copyFile(localFile, workingCopyFile);
                 worker.getListener().getLogger().printf("[COPY FILE TASK] Copy file %s, from %s to %s:\n", f.getName(), localFile.getAbsolutePath(), workingCopyDir.getAbsolutePath());
                 manager.getWCClient().doAdd(workingCopyFile, true, false, false, SVNDepth.INFINITY, false, false, false);
